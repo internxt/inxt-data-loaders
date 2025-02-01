@@ -1,6 +1,5 @@
 import collections
 import json
-import collections
 import sys
 
 if sys.version_info.major == 3 and sys.version_info.minor >= 10:
@@ -12,7 +11,7 @@ else:
 def flatten(d, parent_key='', sep='_'):
     items = []
     for k, v in d.items():
-        new_key = parent_key + sep + k if parent_key else k
+        new_key = f"{parent_key}{sep}{k}" if parent_key else k
         if isinstance(v, MutableMapping):
             items.extend(flatten(v, new_key, sep=sep).items())
         else:
@@ -21,35 +20,30 @@ def flatten(d, parent_key='', sep='_'):
 
 
 def flatten_extract(schema, obj):
-  obj = flatten(obj)
-  minimum_schema = filter(lambda key: key in obj.keys(), schema)
-  return {key: obj[key] for key in minimum_schema}
+    flattened_obj = flatten(obj)
+    return {key: flattened_obj[key] for key in schema if key in flattened_obj}
 
 
-def extract_schema_data(schema, list):
-  return [flatten_extract(schema, item)for item in list]
+def extract_schema_data(schema, data_list):
+    return [flatten_extract(schema, item) for item in data_list]
 
 
 def flatten_items_list(element_list):
-  return [flatten(item) for item in element_list]
-
-# Needs Refactor
+    return [flatten(item) for item in element_list]
 
 
 def remove_lists(d, key='data'):
-  if(not isinstance(d, dict)):
-    return d
-  new = {}
-  for k, v in d.items():
-    aux = v
-    if isinstance(v, dict):
-      aux = remove_lists(v, key)
-    if isinstance(v, list) and len(v) > 0:
-      aux = v[0]
-      aux = remove_lists(aux, key)
-    new[k] = aux
-  return new
+    if not isinstance(d, dict):
+        return d
+    new = {}
+    for k, v in d.items():
+        if isinstance(v, dict):
+            v = remove_lists(v, key)
+        elif isinstance(v, list) and v:
+            v = remove_lists(v[0], key)
+        new[k] = v
+    return new
 
 
-def bulk_remove_lists(l):
-  return [remove_lists(json.loads(str(item))) for item in l]
+def bulk_remove_lists(data_list):
+    return [remove_lists(json.loads(str(item))) for item in data_list]
